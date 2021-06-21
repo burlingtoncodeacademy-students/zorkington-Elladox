@@ -244,7 +244,7 @@ let gLock = true;
 let skeleSearch = false;
 let poison = false;
 let poisonTimer = 3;
-chestSearch = false;
+let chestSearch = false;
 console.log(`
 You have traveled far and wide searching for the lost dungeon of ZorkaMorka, having finally found it you stride forth. 
 Carrying nothing but your wits and the clothes on your back you descend in search of Treasure!
@@ -267,8 +267,7 @@ async function play() {
   //ask for user input
   let userAction = await ask("what would you like to do?");
   //sanitize and split user input
-  let inputArray = userAction /* .toLowerCase() */
-    .split(" ");
+  let inputArray = userAction.toLowerCase().split(" ");
   //the first string of the user input becomes the action and the second becomes the target
   let action = inputArray[0];
   let target = inputArray[1];
@@ -301,7 +300,7 @@ async function play() {
       use: use an object that you have in your inventory
       drop: drop an object that you have in your inventory
       examine: take a closer look at the targeted object, use this to interact with objects that you cannot take
-      lookAround: take a closer look at your surroundings, and list objects that can be interacted with
+      lookaround: take a closer look at your surroundings, and list objects that can be interacted with
       inventory: check your current inventory
       
       `);
@@ -343,7 +342,7 @@ async function play() {
     } else {
       console.log(`you don't have one of those to drop`);
     }
-  } else if (action === "lookAround") {
+  } else if (action === "lookaround") {
     //re-display the description of the room, and then print the room's inventory as a list of interactive things within the room
     console.log(`
     
