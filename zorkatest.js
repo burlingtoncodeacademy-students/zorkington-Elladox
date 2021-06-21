@@ -9,6 +9,8 @@ function ask(questionText) {
   });
 }
 //start of my code
+
+/* CLASSES */
 class Item {
   constructor(iName, iDescription, iAction, iTakeable, Idurability) {
     this.name = iName;
@@ -32,20 +34,18 @@ class Item {
     }
   }
   use() {
-    //console.log(this.durability);
+    //only allow the player to use things that they have in their inventory.
     if (playerInventory.includes(this.name)) {
+      //if the durability is above zero then decrease it by one use and preform the action associated with the item.
+      //This prevents the player from abusing items that are meant to be single use
       if (this.durability > 0) {
         this.durability--;
-        //console.log(this.durability)
-        if (this.name === `stick` && curLoc === `startRoom`) {
-          return `you wave to stick around, ready to take on the world`;
-        } else {
-          //console.log(this.durability)
-          return this.action;
-        }
+        return this.action;
+        //if durability is 0, or somehow negative, return an error
       } else if (this.durability <= 0) {
         return `you have used this as much as you can`;
       }
+      //if it isnt in their inventory return an error
     } else {
       return `you don't have one of those to use`;
     }
@@ -61,6 +61,7 @@ class Item {
       playerInventory.splice(dropIndex, 1);
       return `you dropped ${this.name},`;
     } else {
+      //return an error if the item isnt in the player's inventory
       return `you don't have one of those to drop`;
     }
   }
@@ -73,25 +74,14 @@ class Room {
     this.conRooms = connectingRooms;
   }
 }
-
-let startRoom = new Room(
-  "The first room",
-  "the room that you started in!",
-  ["rock", "stick"],
-  ["secRoom"]
-);
-let secRoom = new Room(
-  "the second room",
-  "the room after the first one!",
-  [],
-  ["startRoom"]
-);
+/*VARIABLE DECLARATIONS*/
 
 let rock = new Item(
   "rock",
   "its a small round rock",
   "you bash your ahead against the rock, much like I do against this code",
   true,
+  //"unbreakable" items get infinite durability so that they can never hit 0
   Infinity
 );
 
@@ -100,6 +90,7 @@ let stick = new Item(
   "its a small stick",
   "you break the stick in half",
   true,
+  //"breakable" items get an actual number of uses. the number depends on their funciton in the game
   1
 );
 
@@ -172,7 +163,7 @@ let entrance = new Room(
   to your right is a [corridor] with marble tiles and bright torches on the walls
   `,
   ["plaque", "rock", "torch", "gate"],
-  ["tunnel", "corridor"]
+  ["tunnel", "corridor",'vault']
 );
 
 let darkRoom = new Room(
@@ -228,9 +219,8 @@ let itemTable = {
   treasure: treasure,
   key: key,
 };
+//seperate location and item look up tables so I dont have to deal with a single massive table
 let locationTable = {
-  startRoom: startRoom,
-  secRoom: secRoom,
   tunnel: tunnel,
   entrance: entrance,
   corridor: corridor,
@@ -238,23 +228,27 @@ let locationTable = {
   shrine: shrine,
   vault: vault,
 };
+
+//set up global variables that will be changed during the game
 let curLoc = "entrance";
 let playerInventory = [];
 let gLock = true;
 let skeleSearch = false;
 let poison = false;
 let poisonTimer = 3;
+//introduce the game
 let chestSearch = false;
 console.log(`
 You have traveled far and wide searching for the lost dungeon of ZorkaMorka, having finally found it you stride forth. 
 Carrying nothing but your wits and the clothes on your back you descend in search of Treasure!
  As you enter the dungeon you look around to get your bearings
  `);
+ //provide a list of accepted commands so the user doesnt have to guess
 console.log(`type help to get a list of available commands`);
 console.log(entrance.description);
 
 async function play() {
-    //if plaer is poisoned, begin the countdown to failure
+  //if plaer is poisoned, begin the countdown to failure
   if (poison === true && poisonTimer > 0) {
     --poisonTimer;
     console.log(`time is ticking, use that antidote soon!`);
@@ -274,18 +268,21 @@ async function play() {
 
   //if the action is valid do something, with the target as the argument
   if (action === "take") {
-    //set up exception for the key
-    if (itemTable[target].name === `key` && chestSearch === true) {
+    //set up exception for the key. make sure they cant take it before the chest has been searched
+    if (target === `key` && chestSearch === true) {
       itemTable[target].take();
       //player becomes poisoned after taking key
       poison = true;
       console.log(`
         as you you pick up the key you feel a prick on your finger! It appears that the chest was trapped and you have been poisoned! Find an antidote quiskly or you will soon perish.
         `);
-        //check if the target is valid so it doesn't error out trying to use an undefined argument
-    } else if(itemTable[target].name === 'treasure' && curLoc === 'vault') {
-        console.log(`You have succeeded in your quest. Revel in the fact that your days wallowing about in dark caves are over!`)
-        process.exit()
+      //make sure the player is actually in the vualt when they try to take the treasure
+    } else if (target === "treasure" && curLoc === "vault") {
+      console.log(
+        `You have succeeded in your quest. Revel in the fact that your days wallowing about in dark caves are over!`
+      );
+      process.exit();
+      //check if the target is valid so it doesn't error out trying to use an undefined argument
     } else if (itemTable[target] instanceof Item) {
       console.log(itemTable[target].take());
     } else {
@@ -293,7 +290,7 @@ async function play() {
       console.log("you cant pick that up!");
     }
   } else if (action === "help") {
-      //allow user to check available commands
+    //allow user to check available commands
     console.log(`
       move : move to target location. Eligble targets will be highlighted in [] brackets
       take: take the targeted object, if it can be taken
@@ -327,7 +324,7 @@ async function play() {
         if (locationTable[target].conRooms.includes(curLoc)) {
           //if it is update the current location
           curLoc = target;
-          console.log(`you are now in ${locationTable[curLoc].description}`);
+          console.log(`${locationTable[curLoc].description}`);
         } else {
           //otherwise throw and error
           console.log(`you cannot go to ${target} from ${curLoc}`);
@@ -337,8 +334,10 @@ async function play() {
       }
     }
   } else if (action === "drop") {
+    //check if the target is valid
     if (itemTable[target] instanceof Item) {
       console.log(itemTable[target].drop());
+      //if target isnt valid return an error
     } else {
       console.log(`you don't have one of those to drop`);
     }
@@ -346,15 +345,14 @@ async function play() {
     //re-display the description of the room, and then print the room's inventory as a list of interactive things within the room
     console.log(`
     
-    you are in ${locationTable[curLoc].description}
+    ${locationTable[curLoc].description}
     looking closer you see the following objects of note:
     a ${locationTable[curLoc].inventory.join(", a ")}
     `);
   } else if (action === "examine") {
-    //set up exceptions for when cerating things are examined
-    //check if a vial already exists, if it doesnt add one to the cave
+    //if examining the skeleton, check if a vial already exists, if it doesnt add one to the cave
     if (
-      itemTable[target].name === "skeleton" &&
+      target === "skeleton" &&
       !darkRoom.inventory.includes("vial") &&
       !playerInventory.includes("vial")
     ) {
@@ -363,27 +361,29 @@ async function play() {
       console.log(
         "It appears to be the skeleton of an unfortunate adventurer. As you search it a vial falls onto the ground from its hands"
       );
-    } else if (itemTable[target].name === "skeleton" && skeleSearch === true) {
+      //if the skeleton has already been searched dont allow the player to just keep finding vials
+    } else if (target === "skeleton" && skeleSearch === true) {
       return console.log(`You've gotten all you can out of this skeleton`);
+      //if the target is the chest, do they same thing as with the skeleton. Check if the chest has been searched already, if it hasnt create a key, if it hasnt return a message
     } else if (
-      itemTable[target].name === "chest" &&
+      target === "chest" &&
       !shrine.inventory.includes("key") &&
       !playerInventory.includes("key")
     ) {
       shrine.inventory.push("key");
       chestSearch = true;
-      console.log(`${chest.description} sadasd`);
+      console.log(`${chest.description}`);
     } else if (itemTable[target] === "chest" && chestSearch === false) {
       console.log(`You've gotton all you can out of this chest`);
     }
-    //return the description of an item. May cause some confusing if I dont also let the user examine locaitons
+    //if not an exception then simply return the description of an item. May cause some confusing if I dont also let the user examine locaitons
     else if (itemTable[target] instanceof Item) {
       console.log(itemTable[target].description);
     } else {
       console.log(`you cant examine that`);
     }
   } else if (action === "use") {
-    //use a given item. The use method has a number of exceptions that check for certain conditions
+    //if the target is gate check the lock status in order to prevent the user from having to keep unlocking the gate
     if (target === "gate") {
       if (gLock === false) {
         console.log("you already unlocked that");
@@ -393,21 +393,23 @@ async function play() {
       } else {
         console.log(gate.action);
       }
+      //when using the vial and the player is poisoned, change the poison status and return a message about being cured
     } else if (target === `vial` && poison === true) {
       poison = false;
       console.log(
         `you feel your strength return as the poison fades from your body `
       );
+      //if not an exception then make use of the .use method that was set up earlier
     } else if (itemTable[target] instanceof Item) {
       console.log(itemTable[target].use());
-      // itemTable[target].action = "You already used this buddy";
     } else {
       console.log(`You cant use that`);
     }
   } else if (action === "inventory") {
-      //display the user's current inventory. I feel like the array looks better in the context of a game
+    //display the user's current inventory. I feel like the array looks better in the context of a game
     console.log(playerInventory /* .join(', a ' )*/);
   } else {
+    //if the action wasnt recognized, return an error
     console.log(`That was an invalid command, please try again`);
   }
 
