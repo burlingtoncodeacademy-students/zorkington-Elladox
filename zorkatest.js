@@ -311,7 +311,7 @@ async function play() {
       console.log(
         `no way you can make it through that tunnel without a light source!`
       );
-      //prevent player from just moving to the vualt
+      //prevent player from just moving to the vault
     } else if (
       locationTable[target] instanceof Room &&
       locationTable[target].location === "vault" &&
